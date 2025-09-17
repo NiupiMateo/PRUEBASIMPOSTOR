@@ -326,13 +326,13 @@
 
       playersInput.addEventListener("input", (event) => {
         const value = parseInt(event.target.value, 10);
-        state.numJugadores = Number.isNaN(value) ? 0 : value;
+        state.numJugadores = isNaN(value) ? 0 : value;
         render();
       });
 
       impostorsInput.addEventListener("input", (event) => {
         const value = parseInt(event.target.value, 10);
-        state.numImpostores = Number.isNaN(value) ? 0 : value;
+        state.numImpostores = isNaN(value) ? 0 : value;
         render();
       });
 
@@ -405,7 +405,7 @@
         impostorsInput.value = state.numImpostores || "";
 
         const total = state.numJugadores + state.numImpostores;
-        totalSpan.textContent = Number.isFinite(total) ? total : 0;
+        totalSpan.textContent = isFinite(total) ? total : 0;
 
         const invalid = isConfigInvalid();
         startBtn.disabled = invalid;
