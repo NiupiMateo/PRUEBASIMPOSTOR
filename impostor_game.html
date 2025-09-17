@@ -324,17 +324,22 @@
       const newConfigBtn = document.getElementById("new-config-btn");
       const restartBtn = document.getElementById("restart-btn");
 
-      playersInput.addEventListener("input", (event) => {
+      function updateNumericState(event, key) {
         const value = parseInt(event.target.value, 10);
-        state.numJugadores = isNaN(value) ? 0 : value;
+        state[key] = Number.isNaN(value) ? 0 : value;
         render();
-      });
+      }
 
-      impostorsInput.addEventListener("input", (event) => {
-        const value = parseInt(event.target.value, 10);
-        state.numImpostores = isNaN(value) ? 0 : value;
-        render();
-      });
+      function bindNumericInput(element, key) {
+        ["input", "change"].forEach((eventType) => {
+          element.addEventListener(eventType, (event) =>
+            updateNumericState(event, key)
+          );
+        });
+      }
+
+      bindNumericInput(playersInput, "numJugadores");
+      bindNumericInput(impostorsInput, "numImpostores");
 
       startBtn.addEventListener("click", startGame);
       nextBtn.addEventListener("click", nextStep);
