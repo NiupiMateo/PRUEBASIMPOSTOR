@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Juego de Impostores</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+        color: #fff;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(100%, 720px);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 3vw + 1rem, 2.5rem);
+        font-weight: 700;
+        margin: 0;
+        text-align: center;
+      }
+
+      section {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      @media (min-width: 640px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #d1d5db;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #374151;
+        background: #111827;
+        color: #fff;
+        font-size: 1rem;
+        appearance: textfield;
+      }
+
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+      }
+
+      button {
+        padding: 12px 28px;
+        border-radius: 9999px;
+        border: none;
+        background: #2563eb;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, background 0.15s ease;
+      }
+
+      button:hover:enabled {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .message {
+        color: #f87171;
+        font-size: 0.9rem;
+        margin-top: -12px;
+        text-align: center;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .black-screen,
+      .role-card {
+        width: min(100%, 256px);
+        height: 256px;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .black-screen {
+        border: 1px solid #4b5563;
+        background: #000;
+        color: #9ca3af;
+      }
+
+      .role-card {
+        background: #1f2937;
+        font-weight: 700;
+        font-size: 1.4rem;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .role-card span:last-child {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #d1d5db;
+      }
+
+      .turn-text {
+        font-size: 0.9rem;
+        color: #9ca3af;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="config-section">
+        <h1>Juego de Impostores</h1>
+        <div class="grid">
+          <label>
+            <span>Cantidad de jugadores (normal)</span>
+            <input id="num-jugadores" type="number" min="1" />
+          </label>
+          <label>
+            <span>Cantidad de impostores</span>
+            <input id="num-impostores" type="number" min="1" />
+          </label>
+        </div>
+        <p id="config-error" class="message hidden"></p>
+        <button id="start-btn" type="button">
+          Iniciar Juego (<span id="total">0</span> personas)
+        </button>
+      </section>
+
+      <section id="game-section" class="hidden">
+        <div id="black-screen" class="black-screen">Pantalla Negra</div>
+        <div id="role-card" class="role-card hidden">
+          <span id="role-name"></span>
+          <span id="role-role"></span>
+        </div>
+        <div id="turn-text" class="turn-text"></div>
+        <button id="next-btn" type="button">Siguiente</button>
+      </section>
+
+      <section id="end-section" class="hidden">
+        <h2 style="margin: 0; font-size: 1.5rem">Fin del Juego 🎉</h2>
+        <button id="new-config-btn" type="button">Nueva configuración</button>
+        <button id="restart-btn" type="button">Reiniciar con misma configuración</button>
+      </section>
+    </main>
+
+    <script>
+      const jugadores = [
+        "Lamine Yamal",
+        "Erling Haaland",
+        "Vinícius Júnior",
+        "Kylian Mbappé",
+        "Jude Bellingham",
+        "Bukayo Saka",
+        "Florian Wirtz",
+        "Jamal Musiala",
+        "Phil Foden",
+        "Cole Palmer",
+        "Federico Valverde",
+        "Pedri",
+        "João Neves",
+        "Khvicha Kvaratskhelia",
+        "Rodri Hernández",
+        "Gavi",
+        "Alejandro Garnacho",
+        "Martin Ødegaard",
+        "Declan Rice",
+        "Rafael Leão",
+        "Lautaro Martínez",
+        "Raphinha",
+        "Josko Gvardiol",
+        "Eduardo Camavinga",
+        "Aurélien Tchouaméni",
+        "Frenkie de Jong",
+        "Ousmane Dembélé",
+        "Mohamed Salah",
+        "Harry Kane",
+        "Kevin De Bruyne",
+        "Bernardo Silva",
+        "Bruno Fernandes",
+        "Darwin Núñez",
+        "Marcus Rashford",
+        "Jadon Sancho",
+        "Lisandro Martínez",
+        "Virgil van Dijk",
+        "Trent Alexander-Arnold",
+        "Andy Robertson",
+        "Alisson Becker",
+        "Ederson Moraes",
+        "Manuel Neuer",
+        "Marc-André ter Stegen",
+        "Mike Maignan",
+        "Gianluigi Donnarumma",
+        "Gregor Kobel",
+        "William Saliba",
+        "Alessandro Bastoni",
+        "Gabriel Magalhães",
+        "Marquinhos",
+        "Achraf Hakimi",
+        "Theo Hernández",
+        "Dani Carvajal",
+        "Ronald Araújo",
+        "Jules Koundé",
+        "Eder Militão",
+        "Antonio Rüdiger",
+        "Dayot Upamecano",
+        "Matthijs de Ligt",
+        "Milan Skriniar",
+        "Ruben Dias",
+        "Aymeric Laporte",
+        "Pau Torres",
+        "Benjamin Pavard",
+        "Alphonso Davies",
+        "Nuno Mendes",
+        "Ferland Mendy",
+        "João Cancelo",
+        "Dani Olmo",
+        "Marco Asensio",
+        "Nicolo Barella",
+        "Sandro Tonali",
+        "Manuel Locatelli",
+        "Sergej Milinković-Savić",
+        "Adrien Rabiot",
+        "Mateo Kovačić",
+        "Ilkay Gündogan",
+        "Luka Modrić",
+        "Toni Kroos",
+        "Casemiro",
+        "Thomas Partey",
+        "Kai Havertz",
+        "Christopher Nkunku",
+        "Kingsley Coman",
+        "Leroy Sané",
+        "Serge Gnabry",
+        "Joshua Kimmich",
+        "Leon Goretzka",
+        "Antoine Griezmann",
+        "Álvaro Morata",
+        "Ferran Torres",
+        "Ansu Fati",
+        "Memphis Depay",
+        "Paulo Dybala",
+        "Ángel Di María",
+        "Neymar Jr.",
+        "Lionel Messi",
+        "Cristiano Ronaldo"
+      ];
+
+      const state = {
+        numJugadores: 5,
+        numImpostores: 1,
+        roles: [],
+        round: 0,
+        showRole: false
+      };
+
+      const configSection = document.getElementById("config-section");
+      const gameSection = document.getElementById("game-section");
+      const endSection = document.getElementById("end-section");
+
+      const playersInput = document.getElementById("num-jugadores");
+      const impostorsInput = document.getElementById("num-impostores");
+      const totalSpan = document.getElementById("total");
+      const configError = document.getElementById("config-error");
+
+      const blackScreen = document.getElementById("black-screen");
+      const roleCard = document.getElementById("role-card");
+      const roleName = document.getElementById("role-name");
+      const roleRole = document.getElementById("role-role");
+      const turnText = document.getElementById("turn-text");
+
+      const startBtn = document.getElementById("start-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const newConfigBtn = document.getElementById("new-config-btn");
+      const restartBtn = document.getElementById("restart-btn");
+
+      playersInput.addEventListener("input", (event) => {
+        const value = parseInt(event.target.value, 10);
+        state.numJugadores = Number.isNaN(value) ? 0 : value;
+        render();
+      });
+
+      impostorsInput.addEventListener("input", (event) => {
+        const value = parseInt(event.target.value, 10);
+        state.numImpostores = Number.isNaN(value) ? 0 : value;
+        render();
+      });
+
+      startBtn.addEventListener("click", startGame);
+      nextBtn.addEventListener("click", nextStep);
+      newConfigBtn.addEventListener("click", () => {
+        state.roles = [];
+        state.round = 0;
+        state.showRole = false;
+        render();
+      });
+      restartBtn.addEventListener("click", startGame);
+
+      function isConfigInvalid() {
+        const total = state.numJugadores + state.numImpostores;
+        return (
+          state.numJugadores < 1 ||
+          state.numImpostores < 1 ||
+          state.numImpostores >= total
+        );
+      }
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      }
+
+      function startGame() {
+        if (isConfigInvalid()) return;
+
+        const chosenPlayer =
+          jugadores[Math.floor(Math.random() * jugadores.length)];
+
+        const roundRoles = [];
+        for (let i = 0; i < state.numJugadores; i += 1) {
+          roundRoles.push({ name: chosenPlayer, role: "Jugador" });
+        }
+        for (let i = 0; i < state.numImpostores; i += 1) {
+          roundRoles.push({ name: "Impostor", role: "Impostor" });
+        }
+
+        shuffle(roundRoles);
+
+        state.roles = roundRoles;
+        state.round = 0;
+        state.showRole = false;
+        render();
+      }
+
+      function nextStep() {
+        if (!state.roles.length || state.round >= state.roles.length) {
+          render();
+          return;
+        }
+
+        if (state.showRole) {
+          state.showRole = false;
+          state.round += 1;
+        } else {
+          state.showRole = true;
+        }
+
+        render();
+      }
+
+      function render() {
+        playersInput.value = state.numJugadores || "";
+        impostorsInput.value = state.numImpostores || "";
+
+        const total = state.numJugadores + state.numImpostores;
+        totalSpan.textContent = Number.isFinite(total) ? total : 0;
+
+        const invalid = isConfigInvalid();
+        startBtn.disabled = invalid;
+        configError.textContent = invalid
+          ? "Configuración inválida: impostores < total y ambos mayores a 0."
+          : "";
+        configError.classList.toggle("hidden", !invalid);
+
+        const gameActive = state.roles.length > 0 && state.round < state.roles.length;
+        const gameFinished = state.roles.length > 0 && state.round >= state.roles.length;
+
+        configSection.classList.toggle("hidden", state.roles.length > 0);
+        gameSection.classList.toggle("hidden", !gameActive);
+        endSection.classList.toggle("hidden", !gameFinished);
+
+        if (gameActive) {
+          turnText.textContent = `Turno ${state.round + 1} de ${state.roles.length}`;
+
+          if (state.showRole) {
+            blackScreen.classList.add("hidden");
+            roleCard.classList.remove("hidden");
+            const currentRole = state.roles[state.round];
+            roleName.textContent = currentRole.name;
+            roleRole.textContent = currentRole.role;
+          } else {
+            roleCard.classList.add("hidden");
+            roleName.textContent = "";
+            roleRole.textContent = "";
+            blackScreen.classList.remove("hidden");
+          }
+        } else {
+          blackScreen.classList.remove("hidden");
+          roleCard.classList.add("hidden");
+          roleName.textContent = "";
+          roleRole.textContent = "";
+          turnText.textContent = "";
+        }
+      }
+
+      render();
+    </script>
+  </body>
+</html>
